@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Raleway:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+:root {
+  --font-sans: 'Raleway', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Lora', Georgia, serif;
+}
+
+@layer base {
+  body {
+    background-color: #0b0f17;
+    color: #f1f5f9;
+    font-variant-numeric: lining-nums;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-heading);
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
