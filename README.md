@@ -1,5 +1,4 @@
 # NutriGen
-hhh
 TDEE calculator + AI diet planner (React, TypeScript, Tailwind, Gemini).
 
 ## Run
