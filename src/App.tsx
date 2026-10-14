@@ -139,12 +139,13 @@ const MEAL_SCHEMA = {
   type: "OBJECT",
   properties: {
     mealName: { type: "STRING", description: "e.g., Breakfast, Lunch, Dinner, Snack" },
-    calories: { type: "NUMBER" },
-    protein: { type: "NUMBER", description: "grams" },
-    carbs: { type: "NUMBER", description: "grams" },
-    fat: { type: "NUMBER", description: "grams" },
+    calories: { type: "NUMBER", description: "Estimated total calories for this meal" },
+    protein: { type: "NUMBER", description: "Protein in grams" },
+    carbs: { type: "NUMBER", description: "Carbohydrates in grams" },
+    fat: { type: "NUMBER", description: "Fat in grams" },
     foods: { type: "ARRAY", items: { type: "STRING", description: "Food with quantity in metric units, e.g., '150g chicken breast' or '2 eggs'" } }
-  }
+  },
+  required: ["mealName", "calories", "protein", "carbs", "fat", "foods"]
 };
 
 const PLAN_SCHEMA = {
@@ -152,7 +153,8 @@ const PLAN_SCHEMA = {
   properties: {
     summary: { type: "STRING", description: "A brief, encouraging summary of the diet approach for this user." },
     meals: { type: "ARRAY", items: MEAL_SCHEMA }
-  }
+  },
+  required: ["summary", "meals"]
 };
 
 const RECIPE_SCHEMA = {
@@ -162,7 +164,8 @@ const RECIPE_SCHEMA = {
     cookTime: { type: "STRING", description: "e.g., 15 mins" },
     ingredients: { type: "ARRAY", items: { type: "STRING", description: "Ingredient with metric quantity, e.g., '200ml milk'" } },
     instructions: { type: "ARRAY", items: { type: "STRING", description: "Step by step instruction" } }
-  }
+  },
+  required: ["prepTime", "cookTime", "ingredients", "instructions"]
 };
 
 const GROCERY_SCHEMA = {
@@ -172,7 +175,8 @@ const GROCERY_SCHEMA = {
     properties: {
       category: { type: "STRING", description: "e.g., Produce, Meat & Seafood, Dairy, Pantry" },
       items: { type: "ARRAY", items: { type: "STRING", description: "Ingredient with total daily quantity in metric units" } }
-    }
+    },
+    required: ["category", "items"]
   }
 };
 
@@ -199,6 +203,7 @@ const callGemini = async (prompt: string, schema: any) => {
 
   return data;
 };
+
 const MACRO_RULES = {
   'Standard':      { protein: 1.8, fatShare: 0.25 },
   'Vegetarian':    { protein: 1.8, fatShare: 0.25 },
@@ -226,10 +231,10 @@ const calcTargets = (calories, weightKg, diet) => {
 
 const sumMacros = (meals = []) => meals.reduce(
   (t, m) => ({
-    calories: t.calories + (m.calories || 0),
-    protein: t.protein + (m.protein || 0),
-    carbs: t.carbs + (m.carbs || 0),
-    fat: t.fat + (m.fat || 0)
+    calories: t.calories + (Number(m.calories) || 0),
+    protein: t.protein + (Number(m.protein) || 0),
+    carbs: t.carbs + (Number(m.carbs) || 0),
+    fat: t.fat + (Number(m.fat) || 0)
   }),
   { calories: 0, protein: 0, carbs: 0, fat: 0 }
 );
@@ -376,7 +381,7 @@ IMPORTANT LANGUAGE INSTRUCTION: You MUST respond entirely in ${lang === 'ar' ? '
     const prompt = `Act as an expert nutritionist. Create a 1-day structured diet plan for a ${profile.age} year old ${profile.gender} weighing ${profile.weight}kg, ${profile.height}cm tall.
 Daily targets (meals must add up to these as closely as possible): ${targetMacros.calories} kcal, ${targetMacros.protein}g protein, ${targetMacros.carbs}g carbs, ${targetMacros.fat}g fat.
 ${constraints()}
-Use 4-5 meals including snacks. Give calories and protein/carbs/fat in grams for every meal.`;
+Use 4-5 meals including snacks. Every single meal MUST have realistic non-zero numbers for calories, protein, carbs, and fat, along with a full list of food items.`;
 
     try {
       setDietPlan(await callGemini(prompt, PLAN_SCHEMA));
@@ -398,7 +403,8 @@ Use 4-5 meals including snacks. Give calories and protein/carbs/fat in grams for
 Meal slot: ${meal.mealName}. Target: ${meal.calories} kcal, ${meal.protein}g protein, ${meal.carbs}g carbs, ${meal.fat}g fat.
 Current meal (do NOT repeat it): ${meal.foods.join(', ')}.
 Other foods already in today's plan (avoid duplicating): ${otherFoods}.
-${constraints()}`;
+${constraints()}
+Ensure full values are provided for calories, protein, carbs, fat, and foods.`;
 
     try {
       const newMeal = await callGemini(prompt, MEAL_SCHEMA);
